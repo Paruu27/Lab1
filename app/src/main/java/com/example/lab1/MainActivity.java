@@ -1,77 +1,78 @@
 package com.example.lab1;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.ImageButton;
-import android.widget.RadioButton;
-import android.widget.Switch;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    Button btn1, btn2;
-    TextView txt1;
-    CheckBox checkBox;
-    RadioButton radioButton;
-    Switch switch1;
-    ImageButton imageButton;
+
+    private static final String TAG = "MainActivity";
+    private EditText emailEditText;
+    private EditText passwordEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btn1 = findViewById(R.id.btnHello);
-        btn2 = findViewById(R.id.butChange);
-        txt1 = findViewById(R.id.txtName);
-        checkBox = findViewById(R.id.checkBox);
-        radioButton = findViewById(R.id.radioButton);
-        switch1 = findViewById(R.id.switch1);
-        imageButton = findViewById(R.id.imageButton);
+        emailEditText = findViewById(R.id.emailEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
+        Button loginButton = findViewById(R.id.loginButton);
 
-        btn1.setOnClickListener(view -> {
-            CharSequence text = "Hello toast from Parvathi";
-            Toast.makeText(MainActivity.this, text, Toast.LENGTH_LONG).show();
-        });
+        // Load email from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        String savedEmail = sharedPreferences.getString("Email", "");
+        emailEditText.setText(savedEmail);
 
-        btn2.setOnClickListener(view -> {
-            String currentText = txt1.getText().toString();
-            if (!currentText.contains("Nair Parvathi")) {
-                txt1.setText(currentText + " Nair Parvathi");
-            }
-        });
+        Log.w(TAG, "In onCreate() - Loading Widgets");
 
-        checkBox.setOnClickListener(view -> {
-            if (checkBox.isChecked()) {
-                Toast.makeText(MainActivity.this, "Checkbox is checked!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Checkbox is unchecked!", Toast.LENGTH_SHORT).show();
-            }
-        });
+        loginButton.setOnClickListener(v -> {
+            String email = emailEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString().trim();
 
-        radioButton.setOnClickListener(view -> {
-            if (radioButton.isChecked()) {
-                Toast.makeText(MainActivity.this, "Radio button is selected!", Toast.LENGTH_SHORT).show();
-            }
-        });
+            // Save email to SharedPreferences
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("Email", email);
+            editor.apply();
 
-        switch1.setOnClickListener(view -> {
-            if (switch1.isChecked()) {
-                Toast.makeText(MainActivity.this, "Switch is ON!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Switch is OFF!", Toast.LENGTH_SHORT).show();
-            }
+            Intent nextPage = new Intent(MainActivity.this, SecondActivity.class);
+            nextPage.putExtra("EmailAddress", email);
+            startActivity(nextPage);
         });
+    }
 
-        imageButton.setOnClickListener(view -> {
-            int width = imageButton.getWidth();
-            int height = imageButton.getHeight();
-            String message = "ImageButton width: " + width + "px, height: " + height + "px";
-            Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-        });
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.w(TAG, "In onStart()");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.w(TAG, "In onResume()");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.w(TAG, "In onPause()");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.w(TAG, "In onStop()");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.w(TAG, "In onDestroy()");
     }
 }

@@ -1,42 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/welcomeTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enter your email address:"
+        android:layout_gravity="center"
+        android:text="Welcome back"
         android:textSize="18sp" />
 
     <EditText
-        android:id="@+id/emailEditText"
+        android:id="@+id/phoneNumberEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Type email here"
-        android:inputType="textEmailAddress"
-        android:minHeight="48dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Type your password:" />
-
-    <EditText
-        android:id="@+id/passwordEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Type password here"
-        android:inputType="textPassword"
-        android:minHeight="48dp" />
+        android:hint="Type phone number here"
+        android:inputType="phone" />
 
     <Button
-        android:id="@+id/loginButton"
-        android:layout_width="match_parent"
+        android:id="@+id/callButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Login" />
+        android:text="Call number" />
 
+    <ImageView
+        android:id="@+id/profileImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_camera" />
+
+    <Button
+        android:id="@+id/changePictureButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change picture" />
 </LinearLayout>
