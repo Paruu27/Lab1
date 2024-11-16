@@ -1,54 +1,34 @@
 package com.example.lab1;
 
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
-import androidx.room.ColumnInfo;
 
-@Entity(tableName = "chat_messages")
+@Entity
 public class ChatMessage {
+
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    @ColumnInfo(name = "sender")
-    public String sender;
-
-    @ColumnInfo(name = "receiver")
-    public String receiver;
-
-    @ColumnInfo(name = "message")
-    public String message;
-
-    @ColumnInfo(name = "sender_dp")
-    public String senderDp;
-
-    @ColumnInfo(name = "receiver_dp")
-    public String receiverDp;
+    @ColumnInfo(name = "message_text")
+    public String messageText;
 
     @ColumnInfo(name = "timestamp")
     public long timestamp;
 
+    @ColumnInfo(name = "receive_message")
+    public boolean receiveMessage;
+
     // Constructor
-    public ChatMessage(String sender, String receiver, String message, String senderDp, String receiverDp, long timestamp) {
-        this.sender = sender;
-        this.receiver = receiver;
-        this.message = message;
-        this.senderDp = senderDp;
-        this.receiverDp = receiverDp;
+    public ChatMessage(String messageText, long timestamp, boolean receiveMessage) {
+        this.messageText = messageText;
         this.timestamp = timestamp;
+        this.receiveMessage = receiveMessage;
     }
 
-    // Getters
-    public String getMessageText() {
-        return message;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public int getText() {
-        return 0;
-    }
-
-    // Other necessary getters and setters...
+    // Getters and setters
+    public int getId() { return id; }
+    public String getMessageText() { return messageText; }
+    public long getTimestamp() { return timestamp; }
+    public boolean isReceiveMessage() { return receiveMessage; }
 }

@@ -2,7 +2,6 @@ package com.example.lab1;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import androidx.appcompat.app.AlertDialog;
@@ -12,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 import com.google.android.material.snackbar.Snackbar;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
@@ -25,7 +23,7 @@ public class ChatRoom extends AppCompatActivity {
     private MessageDatabase db;
     private ArrayList<ChatMessage> messages = new ArrayList<>();
     private RecyclerView recyclerView;
-    private MyAdapter myAdapter;
+    private ChatMessageAdapter myAdapter;
     private Button sendButton, receiveButton;
     private EditText messageEditText;
     private ChatMessage recentlyDeletedMessage;
@@ -46,66 +44,86 @@ public class ChatRoom extends AppCompatActivity {
                 .build();
         mDAO = db.chatMessageDAO();
 
+        // Load existing messages from the database
+        Executor thread = Executors.newSingleThreadExecutor();
+        thread.execute(() -> {
+            messages.addAll(mDAO.getAllMessages());
+            Log.d(TAG, "Loaded messages on startup: " + messages.size());
+            runOnUiThread(() -> {
+// Show the delete dialog when an item is clicked
+                myAdapter = new ChatMessageAdapter(messages, position -> showDeleteDialog(position));
+                recyclerView.setAdapter(myAdapter);
+            });
+        });
+
         sendButton.setOnClickListener(v -> {
-            String messageText = messageEditText.getText().toString();
-            if (!messageText.isEmpty()) {
-                sendMessage("Sender", "Receiver", messageText);
-                messageEditText.setText("");
-            }
+            String text = messageEditText.getText().toString();
+            if (text.isEmpty()) return; // Prevent sending empty messages
+
+            long timestamp = System.currentTimeMillis();
+            ChatMessage newMessage = new ChatMessage(text, timestamp, false); // "false" means sent message
+            addMessageToViewAndDatabase(newMessage);
         });
 
         receiveButton.setOnClickListener(v -> {
-            loadMessages();
-        });
+            String text = messageEditText.getText().toString();
+            if (text.isEmpty()) return;
 
-        myAdapter = new MyAdapter(messages, position -> {
-            ChatMessage messageToDelete = messages.get(position);
-            deleteMessage(messageToDelete);
+            long timestamp = System.currentTimeMillis();
+            ChatMessage newMessage = new ChatMessage(text, timestamp, true); // "true" means received message
+            addMessageToViewAndDatabase(newMessage);
         });
-        recyclerView.setAdapter(myAdapter);
     }
 
-    private void sendMessage(String sender, String receiver, String messageText) {
-        long timestamp = System.currentTimeMillis();
-        ChatMessage newMessage = new ChatMessage(sender, receiver, messageText, "senderDp", "receiverDp", timestamp);
+    private void addMessageToViewAndDatabase(ChatMessage newMessage) {
+        messages.add(newMessage);
+        myAdapter.notifyItemInserted(messages.size() - 1);
+        recyclerView.scrollToPosition(messages.size() - 1);
 
-        Executor executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
+        Executor thread = Executors.newSingleThreadExecutor();
+        thread.execute(() -> {
             mDAO.insertMessage(newMessage);
-            runOnUiThread(this::loadMessages);
+            Log.d(TAG, "Message inserted into database: " + newMessage.getMessageText());
         });
+
+        messageEditText.setText("");
     }
 
-    private void deleteMessage(ChatMessage message) {
-        recentlyDeletedMessage = message;
-        Executor executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            mDAO.deleteMessage(message);
-            runOnUiThread(() -> {
-                loadMessages();
-                Snackbar.make(recyclerView, "Message deleted", Snackbar.LENGTH_LONG)
-                        .setAction("UNDO", v -> undoDelete())
-                        .show();
-            });
-        });
+    private void showDeleteDialog(int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Message")
+                .setMessage("Do you want to delete this message?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    recentlyDeletedMessage = messages.get(position);
+                    messages.remove(position);
+                    myAdapter.notifyItemRemoved(position);
+
+                    Executor thread = Executors.newSingleThreadExecutor();
+                    thread.execute(() -> {
+                        mDAO.deleteMessage(recentlyDeletedMessage);
+                        Log.d(TAG, "Message deleted from database: " + recentlyDeletedMessage.getMessageText());
+                    });
+
+                    showUndoSnackbar();
+                })
+                .setNegativeButton("No", null)
+                .show();
     }
 
-    private void undoDelete() {
-        if (recentlyDeletedMessage != null) {
-            sendMessage(recentlyDeletedMessage.sender, recentlyDeletedMessage.receiver,
-                    recentlyDeletedMessage.message);
-        }
-    }
+    private void showUndoSnackbar() {
+        Snackbar.make(recyclerView, "Message deleted", Snackbar.LENGTH_LONG)
+                .setAction("Undo", v -> {
+                    // Reinsert message into the list
+                    messages.add(recentlyDeletedMessage);
+                    myAdapter.notifyItemInserted(messages.size() - 1);
+                    recyclerView.scrollToPosition(messages.size() - 1);
 
-    private void loadMessages() {
-        Executor executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            List<ChatMessage> allMessages = mDAO.getAllMessages();
-            runOnUiThread(() -> {
-                messages.clear();
-                messages.addAll(allMessages);
-                myAdapter.notifyDataSetChanged();
-            });
-        });
+                    // Reinsert message into the database
+                    Executor thread = Executors.newSingleThreadExecutor();
+                    thread.execute(() -> {
+                        mDAO.insertMessage(recentlyDeletedMessage);
+                        Log.d(TAG, "Message reinserted into database: " + recentlyDeletedMessage.getMessageText());
+                    });
+                }).show();
     }
 }
