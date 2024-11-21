@@ -6,14 +6,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.room.Room;
 import com.google.android.material.snackbar.Snackbar;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -27,6 +26,7 @@ public class ChatRoom extends AppCompatActivity {
     private Button sendButton, receiveButton;
     private EditText messageEditText;
     private ChatMessage recentlyDeletedMessage;
+    private boolean isTablet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,18 +44,22 @@ public class ChatRoom extends AppCompatActivity {
                 .build();
         mDAO = db.chatMessageDAO();
 
+        // Determine if the device is a tablet
+        isTablet = findViewById(R.id.fragmentLocation) != null;
+        Log.d(TAG, "Device type detected: " + (isTablet ? "Tablet" : "Phone"));
+
         // Load existing messages from the database
         Executor thread = Executors.newSingleThreadExecutor();
         thread.execute(() -> {
             messages.addAll(mDAO.getAllMessages());
             Log.d(TAG, "Loaded messages on startup: " + messages.size());
             runOnUiThread(() -> {
-// Show the delete dialog when an item is clicked
-                myAdapter = new ChatMessageAdapter(messages, position -> showDeleteDialog(position));
+                myAdapter = new ChatMessageAdapter(messages, this::onMessageClicked);
                 recyclerView.setAdapter(myAdapter);
             });
         });
 
+        // Handle send button click
         sendButton.setOnClickListener(v -> {
             String text = messageEditText.getText().toString();
             if (text.isEmpty()) return; // Prevent sending empty messages
@@ -65,6 +69,7 @@ public class ChatRoom extends AppCompatActivity {
             addMessageToViewAndDatabase(newMessage);
         });
 
+        // Handle receive button click
         receiveButton.setOnClickListener(v -> {
             String text = messageEditText.getText().toString();
             if (text.isEmpty()) return;
@@ -87,6 +92,27 @@ public class ChatRoom extends AppCompatActivity {
         });
 
         messageEditText.setText("");
+    }
+
+    private void onMessageClicked(int position) {
+        ChatMessage selectedMessage = messages.get(position);
+        Log.d(TAG, "Message clicked: " + selectedMessage.getMessageText());
+
+        MessageDetailsFragment detailsFragment = MessageDetailsFragment.newInstance(selectedMessage);
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+
+        if (isTablet) {
+            // For tablets, load the fragment on the right
+            transaction.replace(R.id.fragmentLocation, detailsFragment)
+                    .commit();
+        } else {
+            // For phones, load the fragment over the RecyclerView
+            transaction.replace(R.id.recyclerView, detailsFragment)
+                    .addToBackStack(null)
+                    .commit();
+        }
     }
 
     private void showDeleteDialog(int position) {
@@ -113,17 +139,19 @@ public class ChatRoom extends AppCompatActivity {
     private void showUndoSnackbar() {
         Snackbar.make(recyclerView, "Message deleted", Snackbar.LENGTH_LONG)
                 .setAction("Undo", v -> {
-                    // Reinsert message into the list
-                    messages.add(recentlyDeletedMessage);
-                    myAdapter.notifyItemInserted(messages.size() - 1);
-                    recyclerView.scrollToPosition(messages.size() - 1);
+                    // Reinsert message into the list if recentlyDeletedMessage is not null
+                    if (recentlyDeletedMessage != null) {
+                        messages.add(recentlyDeletedMessage);
+                        myAdapter.notifyItemInserted(messages.size() - 1);
+                        recyclerView.scrollToPosition(messages.size() - 1);
 
-                    // Reinsert message into the database
-                    Executor thread = Executors.newSingleThreadExecutor();
-                    thread.execute(() -> {
-                        mDAO.insertMessage(recentlyDeletedMessage);
-                        Log.d(TAG, "Message reinserted into database: " + recentlyDeletedMessage.getMessageText());
-                    });
+                        // Reinsert message into the database
+                        Executor thread = Executors.newSingleThreadExecutor();
+                        thread.execute(() -> {
+                            mDAO.insertMessage(recentlyDeletedMessage);
+                            Log.d(TAG, "Message reinserted into database: " + recentlyDeletedMessage.getMessageText());
+                        });
+                    }
                 }).show();
     }
 }
