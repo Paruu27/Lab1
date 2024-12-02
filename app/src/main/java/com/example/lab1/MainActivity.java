@@ -1,77 +1,53 @@
 package com.example.lab1;
 
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.ImageButton;
-import android.widget.RadioButton;
-import android.widget.Switch;
-import android.widget.TextView;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-    Button btn1, btn2;
-    TextView txt1;
-    CheckBox checkBox;
-    RadioButton radioButton;
-    Switch switch1;
-    ImageButton imageButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btn1 = findViewById(R.id.btnHello);
-        btn2 = findViewById(R.id.butChange);
-        txt1 = findViewById(R.id.txtName);
-        checkBox = findViewById(R.id.checkBox);
-        radioButton = findViewById(R.id.radioButton);
-        switch1 = findViewById(R.id.switch1);
-        imageButton = findViewById(R.id.imageButton);
+        // Set up the Toolbar
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+    }
 
-        btn1.setOnClickListener(view -> {
-            CharSequence text = "Hello toast from Parvathi";
-            Toast.makeText(MainActivity.this, text, Toast.LENGTH_LONG).show();
-        });
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu
+        getMenuInflater().inflate(R.menu.my_menu, menu);
+        return true;
+    }
 
-        btn2.setOnClickListener(view -> {
-            String currentText = txt1.getText().toString();
-            if (!currentText.contains("Nair Parvathi")) {
-                txt1.setText(currentText + " Nair Parvathi");
-            }
-        });
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_delete:
+                // Show confirmation dialog for delete
+                new AlertDialog.Builder(this)
+                        .setTitle("Delete ChatMessage")
+                        .setMessage("Are you sure you want to delete this message?")
+                        .setPositiveButton("Yes", (dialog, which) ->
+                                Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show())
+                        .setNegativeButton("No", null)
+                        .show();
+                return true;
 
-        checkBox.setOnClickListener(view -> {
-            if (checkBox.isChecked()) {
-                Toast.makeText(MainActivity.this, "Checkbox is checked!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Checkbox is unchecked!", Toast.LENGTH_SHORT).show();
-            }
-        });
+            case R.id.action_about:
+                // Show "About" toast
+                Toast.makeText(this, "Version 1.0, created by YourName", Toast.LENGTH_SHORT).show();
+                return true;
 
-        radioButton.setOnClickListener(view -> {
-            if (radioButton.isChecked()) {
-                Toast.makeText(MainActivity.this, "Radio button is selected!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        switch1.setOnClickListener(view -> {
-            if (switch1.isChecked()) {
-                Toast.makeText(MainActivity.this, "Switch is ON!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(MainActivity.this, "Switch is OFF!", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        imageButton.setOnClickListener(view -> {
-            int width = imageButton.getWidth();
-            int height = imageButton.getHeight();
-            String message = "ImageButton width: " + width + "px, height: " + height + "px";
-            Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-        });
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }
